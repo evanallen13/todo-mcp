@@ -1,0 +1,18 @@
+[project]
+name = "todo-mcp"
+version = "0.1.0"
+description = "MCP server for a PostgreSQL-backed todo list with OpenTelemetry tracing."
+requires-python = ">=3.10"
+dependencies = [
+  "mcp>=1.23.0",
+  "opentelemetry-api>=1.29.0",
+  "opentelemetry-sdk>=1.29.0",
+  "psycopg[binary]>=3.2.3",
+]
+
+[project.optional-dependencies]
+dev = []
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
