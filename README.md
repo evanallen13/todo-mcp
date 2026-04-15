@@ -18,5 +18,5 @@ export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres"
 Start the MCP server:
 
 ```bash
-python /home/runner/work/todo-mcp/todo-mcp/todo_mcp_server.py
+python todo_mcp_server.py
 ```
