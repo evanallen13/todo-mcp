@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m unittest tests.test_todo_mcp_server -v)",
+      "Bash(py -m unittest tests.test_todo_mcp_server -v)",
+      "mcp__todo-mcp__add_task",
+      "mcp__todo-mcp__list_tasks"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "todo-mcp"
+  ]
+}

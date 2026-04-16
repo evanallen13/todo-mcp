@@ -2,17 +2,17 @@
 
 MCP server with two tools:
 
-- `add_task(title)` to write a todo task to PostgreSQL
-- `list_tasks(limit=100)` to read tasks from PostgreSQL
+- `add_task(title)` to append a todo task to a JSON file
+- `list_tasks(limit=100)` to read tasks from the JSON file
 
-The server also emits OpenTelemetry spans for table setup, task inserts, and task reads.
+The server also emits OpenTelemetry spans for loading, saving, and reading tasks.
 
 ## Run
 
-Set your PostgreSQL connection string:
+Optionally set the path to the tasks JSON file (defaults to `tasks.json` in the current directory):
 
 ```bash
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres"
+export TASKS_PATH="tasks.json"
 ```
 
 Start the MCP server:

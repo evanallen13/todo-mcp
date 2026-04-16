@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "todo-mcp": {
+      "command": "py",
+      "args": ["C:/Users/EvanAllen/Desktop/todo-mcp/todo_mcp_server.py"],
+      "env": {
+        "TASKS_PATH": "C:/Users/EvanAllen/Desktop/todo-mcp/tasks.json"
+      }
+    }
+  }
+}

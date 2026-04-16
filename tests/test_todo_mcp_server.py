@@ -1,52 +1,56 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import json
+import tempfile
 import unittest
-from unittest.mock import MagicMock, patch
+from pathlib import Path
 
 import todo_mcp_server
 
 
-def _connection_context(cursor: MagicMock) -> MagicMock:
-    connection = MagicMock()
-    connection.cursor.return_value.__enter__.return_value = cursor
-    connection.__enter__.return_value = connection
-    connection.__exit__.return_value = False
-    return connection
-
-
 class TodoMcpServerTests(unittest.TestCase):
-    def test_add_task_inserts_and_returns_row(self) -> None:
-        created_at = datetime(2026, 1, 1, tzinfo=timezone.utc)
-        cursor = MagicMock()
-        cursor.fetchone.return_value = (12, "buy milk", created_at)
-        connection = _connection_context(cursor)
+    def setUp(self) -> None:
+        self._tempdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tempdir.cleanup)
+        self._original_path = todo_mcp_server.TASKS_PATH
+        todo_mcp_server.TASKS_PATH = Path(self._tempdir.name) / "tasks.json"
 
-        with patch.object(todo_mcp_server, "_connect", return_value=connection):
-            result = todo_mcp_server.add_task("buy milk")
+    def tearDown(self) -> None:
+        todo_mcp_server.TASKS_PATH = self._original_path
 
-        self.assertEqual(
-            result,
-            {"id": 12, "title": "buy milk", "created_at": created_at.isoformat()},
-        )
-        self.assertEqual(cursor.execute.call_count, 2)
-        insert_sql = cursor.execute.call_args_list[1].args[0]
-        self.assertIn("INSERT INTO tasks", insert_sql)
+    def test_add_task_writes_and_returns_task(self) -> None:
+        result = todo_mcp_server.add_task("buy milk")
 
-    def test_list_tasks_reads_rows_and_applies_limit_bounds(self) -> None:
-        created_at = datetime(2026, 1, 2, tzinfo=timezone.utc)
-        cursor = MagicMock()
-        cursor.fetchall.return_value = [(7, "walk dog", created_at)]
-        connection = _connection_context(cursor)
+        self.assertEqual(result["id"], 1)
+        self.assertEqual(result["title"], "buy milk")
+        self.assertIn("created_at", result)
 
-        with patch.object(todo_mcp_server, "_connect", return_value=connection):
-            result = todo_mcp_server.list_tasks(limit=1000)
+        with todo_mcp_server.TASKS_PATH.open("r", encoding="utf-8") as handle:
+            stored = json.load(handle)
+        self.assertEqual(stored, [result])
 
-        self.assertEqual(
-            result,
-            [{"id": 7, "title": "walk dog", "created_at": created_at.isoformat()}],
-        )
-        self.assertEqual(cursor.execute.call_count, 2)
-        list_sql, list_params = cursor.execute.call_args_list[1].args
-        self.assertIn("SELECT id, title, created_at", list_sql)
-        self.assertEqual(list_params, (500,))
+    def test_add_task_assigns_incrementing_ids(self) -> None:
+        first = todo_mcp_server.add_task("a")
+        second = todo_mcp_server.add_task("b")
+
+        self.assertEqual(first["id"], 1)
+        self.assertEqual(second["id"], 2)
+
+    def test_list_tasks_returns_newest_first_and_applies_limit(self) -> None:
+        todo_mcp_server.add_task("first")
+        todo_mcp_server.add_task("second")
+        todo_mcp_server.add_task("third")
+
+        result = todo_mcp_server.list_tasks(limit=1000)
+
+        self.assertEqual([task["title"] for task in result], ["third", "second", "first"])
+
+        limited = todo_mcp_server.list_tasks(limit=2)
+        self.assertEqual([task["title"] for task in limited], ["third", "second"])
+
+    def test_list_tasks_returns_empty_when_file_missing(self) -> None:
+        self.assertEqual(todo_mcp_server.list_tasks(), [])
+
+
+if __name__ == "__main__":
+    unittest.main()
